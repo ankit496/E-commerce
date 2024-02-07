@@ -1,15 +1,11 @@
 const { User } = require('../models/User');
 const crypto = require('crypto');
 const { sanitizeUser } = require('../services/common');
-const SECRET_KEY = 'SECRET_KEY';
+const SECRET_KEY = process.env.SECRET;
 const jwt = require('jsonwebtoken');
 
 exports.createUser = async (req, res) => {
   try {
-    const isUser = await User.findOne({ email: req.body.email });
-    if (isUser) {
-      return res.status(409).json({ message: 'User already exist' })
-    }
     const salt = crypto.randomBytes(16);
     crypto.pbkdf2(
       req.body.password,
@@ -21,13 +17,19 @@ exports.createUser = async (req, res) => {
         const user = new User({ ...req.body, password: hashedPassword, salt });
         const doc = await user.save();
 
-        req.login(sanitizeUser(doc), (err) => {  // this also calls serializer and adds to session
+        req.login(sanitizeUser(doc), (err) => {
+          // this also calls serializer and adds to session
           if (err) {
             res.status(400).json(err);
           } else {
             const token = jwt.sign(sanitizeUser(doc), SECRET_KEY);
-            res.cookie('jwt', token, { expires: new Date(Date.now() + 36000000), httpOnly: true })
-            res.status(201).json({id:doc.id,role:doc.role});
+            res
+              .cookie('jwt', token, {
+                expires: new Date(Date.now() + 3600000),
+                httpOnly: true,
+              })
+              .status(201)
+              .json({id:doc.id, role:doc.role});
           }
         });
       }
@@ -38,18 +40,20 @@ exports.createUser = async (req, res) => {
 };
 
 exports.loginUser = async (req, res) => {
+  const user = req.user
   res
-    .cookie('jwt',req.user.token,{
-      expires: new Date(Date.now()+3600000),
-      httpOnly:true
+    .cookie('jwt', user.token, {
+      expires: new Date(Date.now() + 3600000),
+      httpOnly: true,
     })
-    .status(201).json(req.user.token)
-
+    .status(201)
+    .json({id:user.id, role:user.role});
 };
 
 exports.checkAuth = async (req, res) => {
-  if(req.user)
+  if(req.user){
     res.json(req.user);
-  else
-    res.sendStatus(401)
+  } else{
+    res.sendStatus(401);
+  }
 };

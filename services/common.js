@@ -9,9 +9,9 @@ exports.sanitizeUser = (user)=>{
 }
 exports.cookieExtractor=function(req){
   let token=null
+  console.log(req.cookies)
   if(req && req.cookies){
     token=req.cookies['jwt']
   }
-  token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YzFjMGMyYTMzNThkY2ExY2IzNTQ3NCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzA3MzE3NDQwfQ.vnjt31cbNqt59Ksz70bJCQyZveUmyd1vQarXRLzsQsA"
   return token
 }
