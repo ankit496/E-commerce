@@ -9,6 +9,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const JwtStrategy = require('passport-jwt').Strategy;
+const cookieParser=require('cookie-parser')
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const { createProduct } = require('./controller/Product');
 const productsRouter = require('./routes/Products');
@@ -19,16 +20,20 @@ const authRouter = require('./routes/Auth');
 const cartRouter = require('./routes/Cart');
 const ordersRouter = require('./routes/Orders');
 const { User } = require('./models/User');
-const { isAuth, sanitizeUser } = require('./services/common');
+const { isAuth, sanitizeUser, cookieExtractor } = require('./services/common');
 
 const SECRET_KEY = 'SECRET_KEY';
 // JWT options
+
+const corsOptions = {
+  origin: "http://localhost:3000",
+};
 const opts = {};
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
 
 //middlewares
-
+server.use(express.static('build'))
 server.use(
   session({
     secret: 'keyboard cat',
@@ -36,10 +41,12 @@ server.use(
     saveUninitialized: false, // don't create session until something stored
   })
 );
+server.use(cookieParser())
 server.use(passport.authenticate('session'));
 server.use(
   cors({
     exposedHeaders: ['X-Total-Count'],
+    corsOptions
   })
 );
 server.use(express.json()); // to parse req.body
@@ -72,7 +79,7 @@ passport.use(
             return done(null, false, { message: 'invalid credentials' });
           }
           const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
-          done(null, token); // this lines sends to serializer
+          done(null, {id:user.id,role:user.role}); // this lines sends to serializer
         }
       );
     } catch (err) {
@@ -84,7 +91,7 @@ passport.use(
 passport.use(
   'jwt',
   new JwtStrategy(opts, async function (jwt_payload, done) {
-    console.log({ jwt_payload });
+    // console.log({ jwt_payload });
     try {
       const user = await User.findOne({ id: jwt_payload.sub });
       if (user) {
@@ -100,7 +107,7 @@ passport.use(
 
 // this creates session variable req.user on being called from callbacks
 passport.serializeUser(function (user, cb) {
-  console.log('serialize', user);
+  // console.log('serialize', user);
   process.nextTick(function () {
     return cb(null, { id: user.id, role: user.role });
   });
@@ -109,7 +116,7 @@ passport.serializeUser(function (user, cb) {
 // this changes session variable req.user when called from authorized request
 
 passport.deserializeUser(function (user, cb) {
-  console.log('de-serialize', user);
+  // console.log('de-serialize', user);
   process.nextTick(function () {
     return cb(null, user);
   });
@@ -121,6 +128,6 @@ async function main() {
   dbConnect()
 }
 
-server.listen(8080, () => {
+server.listen(8000, () => {
   console.log('server started');
 });

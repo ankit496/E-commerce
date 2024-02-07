@@ -2,22 +2,23 @@
 const { Cart } = require("../models/Cart")
 
 exports.fetchCartByUser=async(req,res)=>{
-    const {user}=req.query
-    // try{
-        const cart=await Cart.find({user:user}).populate('user').populate('product').exec()
+    const {id}=req.user
+    try{
+        const cart=await Cart.find({user:id}).populate('user').populate('product')
         res.status(200).json(cart)
-    // }
-    // catch(err){
-    //     res.status(400).json(err)
-    // }
+    }
+    catch(err){
+        res.status(400).json(err)
+    }
 }
 exports.addToCart=async(req,res)=>{
     // const cart=new Cart(req.body)
+    const {id}=req.user
+    // const cart=new Cart({...req.body,user:id})
     try{
-        const doc=await Cart.create(req.body)
-        console.log(doc)
-        const result=await Cart.find({_id:doc._id}).populate('user').populate('product')
-        res.status(201).json(result)
+        const doc=await Cart.create({...req.body,user:id})
+        const result=await Cart.findOne({_id:doc._id}).populate('user').populate('product')
+        return res.status(201).json(result)
     }
     catch(err){
         res.status(400).json(err)
