@@ -16,6 +16,7 @@ const productsRouter = require('./routes/Products');
 const categoriesRouter = require('./routes/Categories');
 const brandsRouter = require('./routes/Brands');
 const usersRouter = require('./routes/User');
+const nodemailer=require('nodemailer')
 const authRouter = require('./routes/Auth');
 const cartRouter = require('./routes/Cart');
 const ordersRouter = require('./routes/Orders');
@@ -124,6 +125,10 @@ passport.deserializeUser(function (user, cb) {
   });
 });
 main().catch((err) => console.log(err));
+
+
+
+
 
 async function main() {
   dbConnect()
