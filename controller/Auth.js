@@ -68,7 +68,7 @@ exports.resetPasswordRequest = async (req, res) => {
   if (user) {
     const token = crypto.randomBytes(48).toString('hex')
     await User.findOneAndUpdate({ email: email }, { resetPasswordToken: token })
-    const resetPageLink = "http://localhost:8000/reset-password?token=" + token + '&email=' + email
+    const resetPageLink = "http://localhost:3000/reset-password?token=" + token + '&email=' + email
     const subject = "reset password for e-commerce"
     const html = `<p>Click <a href=${resetPageLink}>here</a> to Reset Password</p>`
     if (email) {
