@@ -46,7 +46,7 @@ server.use(passport.authenticate('session'));
 
 server.use(
   cors({
-    origin: 'https://e-commerce-xi-six-54.vercel.app', // replace with your frontend's URL
+    origin: 'https://e-commerce-xi-six-54.vercel.app/', // replace with your frontend's URL
     credentials: true,
     exposedHeaders: ['X-Total-Count'],
   })
