@@ -32,9 +32,9 @@ opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
 
 //middlewares
+server.use(cookieParser());
 
 server.use(express.static('build'))
-server.use(cookieParser());
 server.use(
   session({
     secret: process.env.SECRET,
@@ -43,13 +43,16 @@ server.use(
   })
 );
 server.use(passport.authenticate('session'));
+
 server.use(
   cors({
+    origin: 'https://e-commerce-xi-six-54.vercel.app', // replace with your frontend's URL
+    credentials: true,
     exposedHeaders: ['X-Total-Count'],
   })
 );
 server.use(express.json()); // to parse req.body
-server.use('/products', isAuth(), productsRouter.router);
+server.use('/products', productsRouter.router);
 // we can also use JWT token for client-only auth
 server.use('/categories', isAuth(), categoriesRouter.router);
 server.use('/brands', isAuth(), brandsRouter.router);
@@ -67,7 +70,6 @@ passport.use(
     // by default passport uses username
     try {
       const user = await User.findOne({ email: email });
-      console.log(email, password, user);
       if (!user) {
         return done(null, false, { message: 'invalid credentials' }); // for safety
       }
@@ -81,7 +83,7 @@ passport.use(
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
             return done(null, false, { message: 'invalid credentials' });
           }
-          const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
+            const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
           done(null, {id:user.id, role:user.role,token}); // this lines sends to serializer
         }
       );
@@ -109,7 +111,6 @@ passport.use(
 
 // this creates session variable req.user on being called from callbacks
 passport.serializeUser(function (user, cb) {
-  console.log('serialize', user);
   process.nextTick(function () {
     return cb(null, { id: user.id, role: user.role });
   });
@@ -118,7 +119,6 @@ passport.serializeUser(function (user, cb) {
 // this changes session variable req.user when called from authorized request
 
 passport.deserializeUser(function (user, cb) {
-  console.log('de-serialize', user);
   process.nextTick(function () {
     return cb(null, user);
   });
@@ -130,5 +130,5 @@ async function main() {
 }
 
 server.listen(8000, () => {
-  console.log('server started');
+  console.log('server started at port 8000');
 });

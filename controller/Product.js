@@ -1,9 +1,10 @@
 const { Product } = require("../models/Product");
 
 exports.createProduct=(req,res)=>{
-    const product=new Product(req.body)
+    const product=new Product(req.body.product)
+    console.log(req.body.product)
     product.save().then((doc)=>{
-        res.status(201).json(doc)
+          res.status(201).json(doc)
     }).catch((err)=>{
         res.status(400).json(err)
     })
@@ -60,7 +61,7 @@ exports.fetchProductById=async(req,res)=>{
 exports.updateProduct=async(req,res)=>{
     const {id}=req.params
     try{
-        const product=await Product.findByIdAndUpdate(id,req.body,{new:true})
+        const product=await Product.findByIdAndUpdate(id,req.body.update,{new:true})
         res.status(200).json(product)
     }
     catch(err){

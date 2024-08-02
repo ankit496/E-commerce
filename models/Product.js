@@ -15,7 +15,7 @@ const productSchema=new Schema({
         min:[0,'wrong min price'],
         max:[10000,'wrong max price']
     },
-    dicountPercentage:{
+    discountPercentage:{
         type:Number,
         min:[0,'wrong min discount'],
         max:[100,'wrong max price']

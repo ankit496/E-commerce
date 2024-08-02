@@ -4,6 +4,7 @@ exports.fetchOrderByUser=async(req,res)=>{
     const {id}=req.user
     try{
         const orders=await Order.find({user:id})
+        console.log(id,orders)
         res.status(200).json(orders)
     }
     catch(err){
@@ -11,7 +12,9 @@ exports.fetchOrderByUser=async(req,res)=>{
     }
 }
 exports.createOrder=async(req,res)=>{
-    const order=new Order(req.body)
+    console.log(req.body)
+    const data=req.body.order
+    const order=new Order({items:data.items,totalAmount:data.totalAmount,totalItems:data.totalItems,user:data.user.id,paymentMethod:data.paymentMethod,status:data.status,selectedAddress:data.selectedAddress,})
     try{
         const doc=await order.save()
         res.status(201).json(doc)
@@ -23,7 +26,7 @@ exports.createOrder=async(req,res)=>{
 exports.updateOrder=async(req,res)=>{
     const {id}=req.params
     try{
-        const response=await Order.findByIdAndUpdate(id,req.body)
+        const response=await Order.findByIdAndUpdate(id,req.body.order)
         res.status(200).json(response)
     }
     catch(err){

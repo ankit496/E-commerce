@@ -27,7 +27,7 @@ exports.addToCart=async(req,res)=>{
 exports.updateCart=async(req,res)=>{
     const {id}=req.params
     try{
-        const response=await Cart.findByIdAndUpdate({_id:id},{$set:{quantity:req.body.quantity}},{new:true,})
+        const response=await Cart.findByIdAndUpdate({_id:id},{$set:{quantity:req.body.update.quantity}},{new:true,})
         const result=await response.populate('product')
         res.status(200).json(result)
     }
