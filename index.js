@@ -44,13 +44,30 @@ server.use(
 );
 server.use(passport.authenticate('session'));
 
+const allowedOrigins = ['http://localhost:3000', 'https://e-commerce-xi-six-54.vercel.app'];
 server.use(
   cors({
-    origin: '*', // replace with your frontend's URL
+    origin: function (origin, callback) {
+      // If origin is in the allowedOrigins array, allow the request
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     exposedHeaders: ['X-Total-Count'],
   })
 );
+
+server.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
 server.use(express.json()); // to parse req.body
 server.use('/products', productsRouter.router);
 // we can also use JWT token for client-only auth
@@ -60,6 +77,7 @@ server.use('/users', isAuth(), usersRouter.router);
 server.use('/auth', authRouter.router);
 server.use('/cart', isAuth(), cartRouter.router);
 server.use('/orders', isAuth(), ordersRouter.router);
+
 
 // Passport Strategies
 passport.use(
