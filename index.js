@@ -67,13 +67,13 @@ server.use(
 server.use(express.json()); // to parse req.body
 
 // Routes
-server.use('/products', productsRouter.router);
-server.use('/categories', isAuth(), categoriesRouter.router);
-server.use('/brands', isAuth(), brandsRouter.router);
-server.use('/users', isAuth(), usersRouter.router);
-server.use('/auth', authRouter.router);
-server.use('/cart', isAuth(), cartRouter.router);
-server.use('/orders', isAuth(), ordersRouter.router);
+server.use('api/products', productsRouter.router);
+server.use('api/categories', isAuth(), categoriesRouter.router);
+server.use('api/brands', isAuth(), brandsRouter.router);
+server.use('api/users', isAuth(), usersRouter.router);
+server.use('api/auth', authRouter.router);
+server.use('api/cart', isAuth(), cartRouter.router);
+server.use('api/orders', isAuth(), ordersRouter.router);
 
 // Passport Strategies
 passport.use(
