@@ -32,9 +32,9 @@ opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
 
 //middlewares
-server.use(cookieParser());
 
 server.use(express.static('build'))
+server.use(cookieParser());
 server.use(
   session({
     secret: process.env.SECRET,
@@ -43,33 +43,13 @@ server.use(
   })
 );
 server.use(passport.authenticate('session'));
-
-const allowedOrigins = ['http://localhost:3000', 'https://e-commerce-xi-six-54.vercel.app'];
 server.use(
   cors({
-    origin: function (origin, callback) {
-      // If origin is in the allowedOrigins array, allow the request
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
     exposedHeaders: ['X-Total-Count'],
   })
 );
-
-server.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Credentials', 'true');
-  next();
-});
 server.use(express.json()); // to parse req.body
-server.use('/products', productsRouter.router);
+server.use('/products', isAuth(), productsRouter.router);
 // we can also use JWT token for client-only auth
 server.use('/categories', isAuth(), categoriesRouter.router);
 server.use('/brands', isAuth(), brandsRouter.router);
@@ -77,7 +57,6 @@ server.use('/users', isAuth(), usersRouter.router);
 server.use('/auth', authRouter.router);
 server.use('/cart', isAuth(), cartRouter.router);
 server.use('/orders', isAuth(), ordersRouter.router);
-
 
 // Passport Strategies
 passport.use(
@@ -88,6 +67,7 @@ passport.use(
     // by default passport uses username
     try {
       const user = await User.findOne({ email: email });
+      console.log(email, password, user);
       if (!user) {
         return done(null, false, { message: 'invalid credentials' }); // for safety
       }
@@ -101,7 +81,7 @@ passport.use(
           if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
             return done(null, false, { message: 'invalid credentials' });
           }
-            const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
+          const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
           done(null, {id:user.id, role:user.role,token}); // this lines sends to serializer
         }
       );
@@ -129,6 +109,7 @@ passport.use(
 
 // this creates session variable req.user on being called from callbacks
 passport.serializeUser(function (user, cb) {
+  console.log('serialize', user);
   process.nextTick(function () {
     return cb(null, { id: user.id, role: user.role });
   });
@@ -137,6 +118,7 @@ passport.serializeUser(function (user, cb) {
 // this changes session variable req.user when called from authorized request
 
 passport.deserializeUser(function (user, cb) {
+  console.log('de-serialize', user);
   process.nextTick(function () {
     return cb(null, user);
   });
@@ -148,5 +130,5 @@ async function main() {
 }
 
 server.listen(8000, () => {
-  console.log('server started at port 8000');
+  console.log('server started');
 });

@@ -13,7 +13,7 @@ exports.fetchOrderByUser=async(req,res)=>{
 }
 exports.createOrder=async(req,res)=>{
     console.log(req.body)
-    const data=req.body.order
+    const data=req.body
     const order=new Order({items:data.items,totalAmount:data.totalAmount,totalItems:data.totalItems,user:data.user.id,paymentMethod:data.paymentMethod,status:data.status,selectedAddress:data.selectedAddress,})
     try{
         const doc=await order.save()
