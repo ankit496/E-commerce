@@ -2,16 +2,16 @@ const express = require('express');
 const server = express();
 const mongoose = require('mongoose');
 const cors = require('cors');
+const dbConnect=require('./dbConnect')
 const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const JwtStrategy = require('passport-jwt').Strategy;
-const cookieParser = require('cookie-parser');
+const cookieParser=require('cookie-parser')
 const ExtractJwt = require('passport-jwt').ExtractJwt;
-const path = require('path');
-const dbConnect = require('./dbConnect');
+const { createProduct } = require('./controller/Product');
 const productsRouter = require('./routes/Products');
 const categoriesRouter = require('./routes/Categories');
 const brandsRouter = require('./routes/Brands');
@@ -21,39 +21,35 @@ const cartRouter = require('./routes/Cart');
 const ordersRouter = require('./routes/Orders');
 const { User } = require('./models/User');
 const { isAuth, sanitizeUser, cookieExtractor } = require('./services/common');
+const path=require('path')
 
 const SECRET_KEY = process.env.SECRET;
-
 // JWT options
+
+
 const opts = {};
 opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = SECRET_KEY; // TODO: should not be in code;
 
-// Middlewares
+//middlewares
 server.use(cookieParser());
 
-server.use(express.static('build'));
+server.use(express.static('build'))
 server.use(
   session({
-    secret: SECRET_KEY,
+    secret: process.env.SECRET,
     resave: false, // don't save session if unmodified
     saveUninitialized: false, // don't create session until something stored
-    cookie: {
-      httpOnly: true, // helps mitigate the risk of client-side script accessing the protected cookie
-      secure: process.env.NODE_ENV === 'production', // set true if using HTTPS
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-site requests
-    },
   })
 );
 server.use(passport.authenticate('session'));
 
 const allowedOrigins = ['http://localhost:3000', 'https://e-commerce-xi-six-54.vercel.app'];
-
 server.use(
   cors({
     origin: function (origin, callback) {
       // If origin is in the allowedOrigins array, allow the request
-      if (allowedOrigins.includes(origin) || !origin) {
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -64,10 +60,17 @@ server.use(
   })
 );
 
+server.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
 server.use(express.json()); // to parse req.body
-
-// Routes
 server.use('/products', productsRouter.router);
+// we can also use JWT token for client-only auth
 server.use('/categories', isAuth(), categoriesRouter.router);
 server.use('/brands', isAuth(), brandsRouter.router);
 server.use('/users', isAuth(), usersRouter.router);
@@ -75,29 +78,37 @@ server.use('/auth', authRouter.router);
 server.use('/cart', isAuth(), cartRouter.router);
 server.use('/orders', isAuth(), ordersRouter.router);
 
+
 // Passport Strategies
 passport.use(
   'local',
   new LocalStrategy(
-    { usernameField: 'email' },
+    {usernameField:'email'},
     async function (email, password, done) {
-      try {
-        const user = await User.findOne({ email: email });
-        if (!user) {
-          return done(null, false, { message: 'Invalid credentials' });
-        }
-        crypto.pbkdf2(password, user.salt, 310000, 32, 'sha256', async function (err, hashedPassword) {
-          if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
-            return done(null, false, { message: 'Invalid credentials' });
-          }
-          const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
-          done(null, { id: user.id, role: user.role, token }); // this line sends to serializer
-        });
-      } catch (err) {
-        done(err);
+    // by default passport uses username
+    try {
+      const user = await User.findOne({ email: email });
+      if (!user) {
+        return done(null, false, { message: 'invalid credentials' }); // for safety
       }
+      crypto.pbkdf2(
+        password,
+        user.salt,
+        310000,
+        32,
+        'sha256',
+        async function (err, hashedPassword) {
+          if (!crypto.timingSafeEqual(user.password, hashedPassword)) {
+            return done(null, false, { message: 'invalid credentials' });
+          }
+            const token = jwt.sign(sanitizeUser(user), SECRET_KEY);
+          done(null, {id:user.id, role:user.role,token}); // this lines sends to serializer
+        }
+      );
+    } catch (err) {
+      done(err);
     }
-  )
+  })
 );
 
 passport.use(
@@ -116,27 +127,26 @@ passport.use(
   })
 );
 
-// Serialize and Deserialize User
+// this creates session variable req.user on being called from callbacks
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
     return cb(null, { id: user.id, role: user.role });
   });
 });
 
+// this changes session variable req.user when called from authorized request
+
 passport.deserializeUser(function (user, cb) {
   process.nextTick(function () {
     return cb(null, user);
   });
 });
-
-// Database Connection
-async function main() {
-  await dbConnect();
-}
-
 main().catch((err) => console.log(err));
 
-// Start Server
+async function main() {
+  dbConnect()
+}
+
 server.listen(8000, () => {
-  console.log('Server started at port 8000');
+  console.log('server started at port 8000');
 });
