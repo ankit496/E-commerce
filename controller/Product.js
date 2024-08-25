@@ -1,8 +1,8 @@
 const { Product } = require("../models/Product");
 
 exports.createProduct=(req,res)=>{
-    const product=new Product(req.body.product)
-    console.log(req.body.product)
+    const product=new Product(req.body)
+    console.log(req.body)
     product.save().then((doc)=>{
           res.status(201).json(doc)
     }).catch((err)=>{
